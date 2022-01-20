@@ -1,0 +1,38 @@
+import time  # 時刻に関するさまざまな関数を使用するためのパッケージ
+import pandas as pd  # データ解析を容易にする機能を提供する
+import requests  # WEBスクレイピングでHTMLファイルからデータを取得するのに使われる
+from bs4 import BeautifulSoup  # 取得したHTMLファイルをさらに解析するライブラリ
+import os
+
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36',
+}
+    
+result = []
+url_door = "http://pubs.iir.hit-u.ac.jp/ja/pdfs/index?did[]=3&cid[]=8&s=dd&ppc=200&page=1"
+response = requests.get(url_door, headers= headers)
+response.encoding = response.apparent_encoding
+soup = BeautifulSoup(response.text, 'html.parser')
+number = soup.find_all('div',{"class": "articleLeft"})
+case = 0
+for url in number:
+    result = []
+    case += 1
+    print("case  " + str(case))
+    second = "http://pubs.iir.hit-u.ac.jp/" + url.find('a', href=True).attrs['href']
+    result.append(second)
+    response2 = requests.get(second)
+    response2.encoding = response2.apparent_encoding
+    soup2 = BeautifulSoup(response2.text, 'html.parser')
+    table = soup2.find_all('td')
+    for a in table:
+        result.append(a.text.replace("\n","").replace(" ",""))
+    try:
+        download = soup2.find('p',{"class": "download"}).find('a', href=True).attrs['href']
+        result.append("http://pubs.iir.hit-u.ac.jp/"  + download)
+    except:
+        result.append("ファイルなし")
+    time.sleep(5)
+    log = pd.DataFrame([result])
+    log.to_csv(r"C:\Users\Ray94\OneDrive\Research\PHD\IIRcase.csv", mode='a', index=False, header=None, encoding="utf-8_sig")
+  
